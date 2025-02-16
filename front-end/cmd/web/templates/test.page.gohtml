@@ -6,7 +6,7 @@
             <div class="col">
                 <h1 class="mt-5">Test microservices</h1>
                 <hr>
-                <a id="brokerBtn" class="btn btn-outline-secondary" href="javascript:void(0):">Test Broker</a>
+                <a id="brokerBtn" class="btn btn-outline-secondary" href="javascript:void(0)">Test Broker</a> 
                 <div id="output" class="mt-5" style="outline: 1px solid silver; padding: 2em;">
                     <span class="text-muted">Output shows here...</span>
                 </div>
@@ -39,12 +39,13 @@
 
     // add event listener to the button
     brokerBtn.addEventListener('click', function() {
-        //  fetch fropm localhost:8080
+        // when the button was clicked, it trigger teh function. 
+        // the function first make post requet to localhost then display the response
         const body ={
             method: 'POST',
-            }
-        // post an empty body to the broker
-        fetch("http:\/\/localhost:8080/", body)
+        }
+        // make post request with empty body to localhost:8080
+        fetch('http:\/\/localhost:8080/', body)
         .then(response => response.json()) // parse the response as JSON 
         .then(data => {
             //console.log(data); // log the data to the console
