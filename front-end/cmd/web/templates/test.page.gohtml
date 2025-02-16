@@ -6,7 +6,7 @@
             <div class="col">
                 <h1 class="mt-5">Test microservices</h1>
                 <hr>
-
+                <a id="brokerBtn" class="btn btn-outline-secondary" href="javascript:void(0):">Test Broker</a>
                 <div id="output" class="mt-5" style="outline: 1px solid silver; padding: 2em;">
                     <span class="text-muted">Output shows here...</span>
                 </div>
@@ -31,6 +31,35 @@
 
 {{define "js"}}
     <script>
-        
+    // get references to the elements
+    let brokerBtn = document.getElementById('brokerBtn');   
+    let output = document.getElementById('output');
+    let sent = document.getElementById('payload');
+    let received = document.getElementById('received');
+
+    // add event listener to the button
+    brokerBtn.addEventListener('click', function() {
+        //  fetch fropm localhost:8080
+        const body ={
+            method: 'POST',
+            }
+        // post an empty body to the broker
+        fetch("http:\/\/localhost:8080/", body)
+        .then(response => response.json()) // parse the response as JSON 
+        .then(data => {
+            //console.log(data); // log the data to the console
+            //output.innerHTML = JSON.stringify(data, null, 2); // display the data in the output element
+            sent.innerHTML="empty post request";
+            received.innerHTML = JSON.stringify(data, undefined, 4);
+            if (data.error) {
+                console.log(data.message);
+            } else {
+                output.innerHTML += `<br><strong>Received:</strong> ${data.message}`;
+            }
+        })
+        .catch(error => { 
+            output.innerHTML += `<br><strong>Error:</strong> ${error.message}`;
+        });
+    });
     </script>
 {{end}}
