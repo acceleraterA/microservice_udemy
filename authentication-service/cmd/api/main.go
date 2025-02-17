@@ -3,10 +3,20 @@ package main
 import (
 	"authentication/data"
 	"database/sql"
+	"fmt"
 	"log"
+	"net/http"
+	"os"
+	"time"
+
+	_ "github.com/jackc/pgconn"
+	_ "github.com/jackc/pgx/v4"
+	_ "github.com/jackc/pgx/v4/stdlib"
 )
 
 const webPort = "80"
+
+var counts int64
 
 type Config struct {
 	DB     *sql.DB
@@ -17,17 +27,59 @@ func main() {
 	log.Println("Starting authentication service on port", webPort)
 
 	//TODO connect to DB
-
+	conn := connectToDB()
+	if conn == nil {
+		log.Panic("Failed to connect to DB")
+	}
 	//set up config
 
-	app := Config()
-	srv:=&http.Server(
-		Addr: fmt.Sprintf(":%s", webPort),
+	app := Config{
+		DB:     conn,
+		Models: data.New(conn),
+	}
+	srv := &http.Server{
+		Addr:    fmt.Sprintf(":%s", webPort),
 		Handler: app.routes(),
-	)
+	}
 
-	err:=srv.ListenAndServe()
-	if err!=nil{
+	err := srv.ListenAndServe()
+	if err != nil {
 		log.Panic("Server failed to start: %v", err)
+	}
+}
+
+func openDB(dsn string) (*sql.DB, error) {
+	db, err := sql.Open("pgx", dsn)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := db.Ping(); err != nil {
+		return nil, err
+	}
+
+	return db, nil
+}
+
+func connectToDB() *sql.DB {
+
+	dsn := os.Getenv("DSN")
+
+	for {
+		connection, err := openDB(dsn)
+		if err != nil {
+			log.Println("Error connecting to DB", err)
+			counts++
+		} else {
+			log.Println("Connected to DB")
+			return connection
+		}
+		if counts > 10 {
+			log.Println(err)
+			return nil
+		}
+		log.Println("Retrying in 5 seconds")
+		time.Sleep(5 * time.Second)
+		continue
 	}
 }
