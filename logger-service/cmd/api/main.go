@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"log"
+	"time"
 
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -28,7 +29,15 @@ func main() {
 		log.Panic("Failed to connect to mongo")
 	}
 	client = mongoClient
+	// create a context in order to disconnect from mongo
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second) //create a context that will cancel after 15 seconds
+	defer cancel()                                                           //cancel the context when the function returns
 
+	defer func() { //defer a function to disconnect from mongo at the end of main function
+		if err := client.Disconnect(ctx); err != nil {
+			log.Panic("Failed to disconnect from mongo")
+		}
+	}()
 }
 
 func connectToMongo() (*mongo.Client, error) {
