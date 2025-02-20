@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -75,4 +76,66 @@ func (l *LogEntry) All() ([]*LogEntry, error) {
 		logs = append(logs, &item)
 	}
 	return logs, nil
+}
+
+func (l *LogEntry) GetOne(id string) (*LogEntry, error) {
+	// create a context
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+	// get the collection
+	collection := client.Database("logs").Collection("logs")
+	docID, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		log.Println("Error converting id to object id", err)
+		return nil, err
+	}
+
+	var entry LogEntry
+	err = collection.FindOne(ctx, bson.M{"_id": docID}).Decode(&entry)
+	if err != nil {
+		log.Println("Error getting log entry", err)
+		return nil, err
+	}
+	return &entry, nil
+}
+
+func (l *LogEntry) DropColllection() error {
+	// create a context
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+	// get the collection
+	collection := client.Database("logs").Collection("logs")
+	if err := collection.Drop(ctx); err != nil {
+		log.Println("Error dropping collection", err)
+		return err
+	}
+	return nil
+}
+
+func (l *LogEntry) Update() (*mongo.UpdateResult, error) {
+	// create a context
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+	// get the collection
+	collection := client.Database("logs").Collection("logs")
+	docID, err := primitive.ObjectIDFromHex(l.ID)
+	if err != nil {
+		log.Println("Error converting id to object id", err)
+		return nil, err
+	}
+	result, err := collection.UpdateOne(
+		ctx, bson.M{"_id": docID},
+		bson.D{
+			{Key: "$set", Value: bson.D{
+				{Key: "name", Value: l.Name},
+				{Key: "data", Value: l.Data},
+				{Key: "updated_at", Value: time.Now()},
+			}},
+		},
+	)
+	if err != nil {
+		log.Println("Error updating log entry", err)
+		return nil, err
+	}
+	return result, nil
 }
