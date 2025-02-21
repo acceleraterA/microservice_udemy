@@ -59,7 +59,7 @@ func (app *Config) authenticate(w http.ResponseWriter, a AuthPayload) {
 		app.errorJSON(w, err, http.StatusBadRequest)
 		return
 	}
-	defer response.Body.Close()
+	defer response.Body.Close() // close the body when we're done
 	//make sure get back correct status code
 	if response.StatusCode == http.StatusUnauthorized {
 		app.errorJSON(w, errors.New("invalid credentials"), http.StatusBadRequest)
