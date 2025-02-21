@@ -10,11 +10,16 @@ import (
 type RequestPayload struct {
 	Action string      `json:"action"`
 	Auth   AuthPayload `json:"auth,omitempty"`
+	Log    logPayload  `json:"log,omitempty"`
 }
 
 type AuthPayload struct {
 	Email    string `json:"email"`
 	Password string `json:"password"`
+}
+type logPayload struct {
+	Name string `json:"name"`
+	Data string `json:"data"`
 }
 
 func (app *Config) Broker(w http.ResponseWriter, r *http.Request) {
@@ -37,10 +42,44 @@ func (app *Config) HandleSubmission(w http.ResponseWriter, r *http.Request) {
 	switch requestPayload.Action {
 	case "auth":
 		app.authenticate(w, requestPayload.Auth)
+	case "log":
+		app.logItem(w, requestPayload.Log)
 	default:
 		app.errorJSON(w, errors.New("invalid action"), http.StatusBadRequest)
 	}
 
+}
+func (app *Config) logItem(w http.ResponseWriter, entry logPayload) {
+	// create json we'll send to the log service
+	jsonData, _ := json.MarshalIndent(entry, "", "\t")
+	logServiceURL := "http://logger-service/log"
+
+	// call the log service
+	request, err := http.NewRequest("POST", logServiceURL, bytes.NewBuffer(jsonData))
+	if err != nil {
+		app.errorJSON(w, err, http.StatusBadRequest)
+		return
+	}
+	request.Header.Set("Content-Type", "application/json")
+
+	client := &http.Client{}
+	response, err := client.Do(request)
+	if err != nil {
+		app.errorJSON(w, err, http.StatusBadRequest)
+		return
+	}
+	defer response.Body.Close() // close the body when we're done
+	//make sure get back correct status code
+	if response.StatusCode != http.StatusAccepted {
+		app.errorJSON(w, errors.New("error calling log service"))
+		return
+	}
+	// create a variable we'll read response.Body into
+	var payload jsonResponse
+	payload.Message = "Log written to database"
+	payload.Error = false
+	// decode the json
+	app.writeJSON(w, http.StatusAccepted, payload)
 }
 
 func (app *Config) authenticate(w http.ResponseWriter, a AuthPayload) {
