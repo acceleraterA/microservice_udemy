@@ -63,6 +63,24 @@ services:
       - ./db-data/mongo/:/data/db
   mailhog:
     image: 'mailhog/mailhog:latest'
+    platform: linux/amd64
     ports:
       - "8025:8025"
       - "1025:1025"
+  mail-service:
+    build:
+      context: ./../mail-service
+      dockerfile: ./../mail-service/mail-service.dockerfile
+    restart: always
+    deploy:
+      mode: replicated
+      replicas: 1
+    environment:
+      MAIL_DOMAIN: localhost
+      MAIL_HOST: mailhog
+      MAILHOG_PORT: 1025
+      MAIL_ENCRYPTION: none
+      MAIL_USERNAME: ""
+      MAIL_PASSWORD: ""
+      FROM_NAME: "Mail Service"
+      FROM_ADDRESS: "mail-service@localhost"
