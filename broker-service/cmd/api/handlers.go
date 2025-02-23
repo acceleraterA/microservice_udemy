@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"log"
 	"net/http"
 )
 
@@ -143,23 +144,27 @@ func (app *Config) authenticate(w http.ResponseWriter, a AuthPayload) {
 func (app *Config) sendMail(w http.ResponseWriter, m MailPayload) {
 	// create json we'll send to the mail service
 	jsonData, _ := json.MarshalIndent(m, "", "\t")
-
+	log.Printf("JSON data to send: %s", jsonData)
 	// call the mail service
 	request, err := http.NewRequest("POST", "http://mail-service/send", bytes.NewBuffer(jsonData))
 	if err != nil {
 		app.errorJSON(w, err, http.StatusBadRequest)
 		return
 	}
+
 	request.Header.Set("Content-Type", "application/json")
 	client := &http.Client{}
 	response, err := client.Do(request)
 	if err != nil {
+		log.Printf("Error making HTTP request: %v", err)
 		app.errorJSON(w, err, http.StatusBadRequest)
 		return
 	}
 	defer response.Body.Close() // close the body when we're done
 	//make sure get back correct status code
+	log.Printf("Response status code: %d", response.StatusCode)
 	if response.StatusCode != http.StatusAccepted {
+		log.Printf("Error calling mail service: %v", response.Status)
 		app.errorJSON(w, errors.New("error calling mail service"))
 		return
 	}
