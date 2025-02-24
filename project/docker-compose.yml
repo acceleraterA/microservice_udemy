@@ -83,3 +83,10 @@ services:
       MAIL_PASSWORD: ""
       FROM_NAME: "Mail Service"
       FROM_ADDRESS: "mail-service@localhost"
+  rabbitmq:
+    image: rabbitmq:3.9-alpine
+    restart: always
+    ports:
+      - "5672:5672"
+    volumes:
+      - ./db-data/rabbitmq/:/var/lib/rabbitmq/
