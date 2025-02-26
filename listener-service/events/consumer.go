@@ -95,6 +95,7 @@ func (consumer *Consumer) Listen(topics []string) error {
 	return nil
 }
 
+// handle payload from queue for log or auth
 func handlePayload(payload Payload) {
 	switch payload.Name {
 	case "log", "event":
