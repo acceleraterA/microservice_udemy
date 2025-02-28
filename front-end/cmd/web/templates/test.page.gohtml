@@ -10,6 +10,7 @@
                 <a id="authBrokerBtn" class="btn btn-outline-secondary" href="javascript:void(0)">Test Auth</a> 
                 <a id="logBtn" class="btn btn-outline-secondary" href="javascript:void(0)">Test Log</a> 
                 <a id="mailBtn" class="btn btn-outline-secondary" href="javascript:void(0)">Test Mail</a>
+                <a id="logGBtn" class="btn btn-outline-secondary" href="javascript:void(0)">Test gRPC log</a>
                 <div id="output" class="mt-5" style="outline: 1px solid silver; padding: 2em;">
                     <span class="text-muted">Output shows here...</span>
                 </div>
@@ -39,10 +40,48 @@
     let authBrokerBtn = document.getElementById('authBrokerBtn'); 
     let logBtn = document.getElementById('logBtn');
     let mailBtn = document.getElementById('mailBtn');
+    let logGBtn = document.getElementById('logGBtn');
     let output = document.getElementById('output');
     let sent = document.getElementById('payload');
     let received = document.getElementById('received');
 
+
+    // add event listener to the test gRPC log button
+    logGBtn.addEventListener('click', function() {
+
+        const payload = {
+            action: "log",
+            Log:{
+                name: "event",
+                data: "grpc data",
+            }  
+        }
+        const headers=new Headers();
+        headers.append('Content-Type', 'application/json');
+        const body ={
+            method: 'POST',
+            headers: headers,
+            body: JSON.stringify(payload)
+        }
+
+        // make post request with logpayload to localhost:8080
+        fetch('http:\/\/localhost:8080/log-grpc', body)
+        .then(response => response.json()) // parse the response as JSON 
+        .then(data => {
+            console.log("Data:", data);
+            sent.innerHTML=JSON.stringify(payload, undefined, 4);
+            received.innerHTML = JSON.stringify(data, undefined, 4);
+            if (data.error) {
+                output.innerHTML += `<br><strong>Error:</strong> ${data.message}`;
+            } else {
+                output.innerHTML += `<br><strong>response from broker service</strong> ${data.message}`;
+            }
+        })
+        .catch(error => { 
+            output.innerHTML += `<br><strong>Error:</strong> ${error.message}`;
+        });
+    });
+    // add event listener to the test mail button
     mailBtn.addEventListener('click', function() {
 
         const payload = {
